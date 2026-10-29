@@ -6,7 +6,10 @@ function createApp(options = {}) {
     const { createAuth } = require("./auth");
     const { router, requireRoles } = createAuth({
         getPrisma: options.getPrisma || getPrisma,
-        jwtSecret: options.jwtSecret ?? process.env.JWT_SECRET,
+        jwtSecret:
+            options.jwtSecret !== undefined
+                ? options.jwtSecret
+                : process.env.JWT_SECRET,
     });
     app.use(express.json({ limit: "8kb" }));
     const registration =

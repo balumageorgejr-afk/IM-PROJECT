@@ -6,7 +6,11 @@
     "scripts": {
         "dev": "node --watch src/server.js",
         "start": "node src/server.js",
+        "build": "npm run prisma:generate && npm --prefix client install && npm --prefix client run build",
         "db:check": "node scripts/db-check.js",
+        "db:seed": "node scripts/seed.js",
+        "prisma:deploy": "prisma migrate deploy --config prisma7.config.ts",
+        "prisma:push": "prisma db push --config prisma7.config.ts",
         "provision:initial": "node scripts/provision-initial.js",
         "provision:lookups": "node scripts/provision-lookups.js",
         "verify:live-crud": "pwsh -NoLogo -NoProfile -File scripts/verify-live-crud.ps1",
