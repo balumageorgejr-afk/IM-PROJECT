@@ -7,12 +7,7 @@ const roles = [
     "Faculty / Student Organization Representative",
 ];
 
-const reservationStatuses = [
-    "Pending",
-    "Approved",
-    "Rejected",
-    "Cancelled",
-];
+const reservationStatuses = ["Pending", "Approved", "Rejected", "Cancelled"];
 
 const facilityTypes = [
     "Classroom",
@@ -78,7 +73,9 @@ async function seed() {
             update: {},
         });
     }
-    console.log(`- Upserted ${equipmentCategories.length} equipment categories.`);
+    console.log(
+        `- Upserted ${equipmentCategories.length} equipment categories.`,
+    );
 
     // 5. Optional Initial Administrator Account
     const email = process.env.PROVISION_ADMIN_EMAIL?.trim()?.toLowerCase();
@@ -142,4 +139,3 @@ seed()
             // Ignore disconnect error during process exit
         }
     });
-
