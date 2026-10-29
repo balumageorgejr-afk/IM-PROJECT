@@ -1,0 +1,56 @@
+{
+    "name": "campus-facility-management-system",
+    "version": "1.0.0",
+    "description": "Campus Facility Management System: clean V2 backend foundation.",
+    "main": "src/server.js",
+    "scripts": {
+        "dev": "node --watch src/server.js",
+        "start": "node src/server.js",
+        "build": "npm run prisma:generate && npm --prefix client install && npm --prefix client run build",
+        "db:check": "node scripts/db-check.js",
+        "db:seed": "node scripts/seed.js",
+        "prisma:deploy": "prisma migrate deploy --config prisma7.config.ts",
+        "prisma:push": "prisma db push --config prisma7.config.ts",
+        "provision:initial": "node scripts/provision-initial.js",
+        "provision:lookups": "node scripts/provision-lookups.js",
+        "verify:live-crud": "pwsh -NoLogo -NoProfile -File scripts/verify-live-crud.ps1",
+        "verify:admin": "pwsh -NoLogo -NoProfile -File scripts/verify-admin-login.ps1",
+        "reset:admin-password": "pwsh -NoLogo -NoProfile -File scripts/reset-admin-password.ps1",
+        "prisma:generate": "prisma generate --config prisma7.config.ts",
+        "lint": "eslint . --max-warnings=0",
+        "format": "prettier --write . && npm run prisma:format",
+        "format:check": "prettier --check . && npm run prisma:format:check",
+        "prisma:validate": "prisma validate --config prisma7.config.ts",
+        "prisma:format": "prisma format --config prisma7.config.ts",
+        "prisma:format:check": "prisma format --check --config prisma7.config.ts",
+        "check:syntax": "node scripts/check-syntax.js",
+        "audit": "npm audit --audit-level=high",
+        "quality": "npm run prisma:validate && npm run format:check && npm run check:syntax && npm run lint && npm test && npm --prefix client run quality",
+        "pretest": "npm run prisma:generate",
+        "test": "node --test tests/*.test.js",
+        "test:postgres": "node scripts/test-reservations-postgres.js --local"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs",
+    "dependencies": {
+        "@prisma/adapter-pg": "7.10.1",
+        "@prisma/client": "7.10.1",
+        "bcryptjs": "3.0.3",
+        "dotenv": "^18.0.4",
+        "express": "^5.2.1",
+        "jsonwebtoken": "9.0.3",
+        "pg": "^8.23.1"
+    },
+    "devDependencies": {
+        "@eslint/js": "10.0.1",
+        "eslint": "10.12.0",
+        "globals": "17.13.0",
+        "prettier": "3.9.10",
+        "prisma": "7.10.1"
+    },
+    "engines": {
+        "node": "24.x"
+    }
+}

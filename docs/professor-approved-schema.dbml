@@ -1,0 +1,298 @@
+
+//////////////////////////////////////////////////////
+// CAMPUS FACILITY MANAGEMENT SYSTEM
+// IM101 - Advanced Database Systems
+// Revision 2 - Professor Approved
+// Only modification: full_name split into fname and lname
+//////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////
+// LOOKUP TABLES
+//////////////////////////////////////////////////////
+
+Table roles {
+  role_id int [pk, increment]
+  role_name varchar(50) [not null, unique]
+}
+
+Table facility_types {
+  facility_type_id int [pk, increment]
+  type_name varchar(50) [not null, unique]
+}
+
+Table equipment_categories {
+  category_id int [pk, increment]
+  category_name varchar(50) [not null, unique]
+}
+
+Table reservation_status {
+  status_id int [pk, increment]
+  status_name varchar(30) [not null, unique]
+}
+
+
+//////////////////////////////////////////////////////
+// CORE TABLES
+//////////////////////////////////////////////////////
+
+Table users {
+  user_id int [pk, increment]
+  role_id int [not null]
+  fname varchar(60) [not null]
+  lname varchar(60) [not null]
+  email varchar(150) [not null, unique]
+  password_hash varchar(255) [not null]
+  id_number varchar(30) [unique]
+  contact_number varchar(20)
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+}
+
+Table buildings {
+  building_id int [pk, increment]
+  building_name varchar(100) [not null, unique]
+  floor_count smallint [not null]
+  location_note varchar(150)
+}
+
+Table facilities {
+  facility_id int [pk, increment]
+  building_id int [not null]
+  facility_type_id int [not null]
+  facility_name varchar(100) [not null]
+  floor_number smallint [not null]
+  capacity int [not null]
+  status varchar(20) [not null, default: 'Available']
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (building_id, facility_name, floor_number) [unique]
+  }
+}
+
+Table equipment {
+  equipment_id int [pk, increment]
+  category_id int [not null]
+  home_facility_id int
+  equipment_name varchar(100) [not null]
+  serial_number varchar(60) [unique]
+  total_quantity int [not null]
+  available_quantity int [not null]
+  condition_status varchar(20) [not null, default: 'Good']
+  created_at timestamptz [not null, default: `now()`]
+}
+
+Table reservations {
+  reservation_id int [pk, increment]
+  facility_id int [not null]
+  requested_by int [not null]
+  approved_by int
+  status_id int [not null]
+  purpose varchar(255) [not null]
+  start_datetime timestamptz [not null]
+  end_datetime timestamptz [not null]
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (facility_id, start_datetime, end_datetime)
+    requested_by
+  }
+}
+
+
+//////////////////////////////////////////////////////
+// RESERVATION <-> EQUIPMENT
+//////////////////////////////////////////////////////
+
+Table reservation_equipment {
+  reservation_id int [not null]
+  equipment_id int [not null]
+  quantity_requested int [not null]
+  quantity_approved int
+  condition_at_issue varchar(20)
+  condition_at_return varchar(20)
+
+  indexes {
+    (reservation_id, equipment_id) [pk]
+  }
+}
+
+
+//////////////////////////////////////////////////////
+// EQUIPMENT LOANS
+//////////////////////////////////////////////////////
+
+Table equipment_loans {
+  loan_id int [pk, increment]
+  user_id int [not null]
+  approved_by int
+  requested_at timestamptz [not null, default: `now()`]
+  due_date timestamptz [not null]
+  return_date timestamptz
+  loan_status varchar(15) [not null, default: 'Pending']
+}
+
+Table loan_items {
+  loan_id int [not null]
+  equipment_id int [not null]
+  quantity int [not null]
+  condition_out varchar(20)
+  condition_in varchar(20)
+
+  indexes {
+    (loan_id, equipment_id) [pk]
+    equipment_id
+  }
+}
+
+
+//////////////////////////////////////////////////////
+// FACILITY STAFF ASSIGNMENTS
+//////////////////////////////////////////////////////
+
+Table facility_staff_assignments {
+  assignment_id int [pk, increment]
+  facility_id int [not null]
+  staff_id int [not null]
+  assigned_role varchar(30) [not null, default: 'Custodian']
+  shift varchar(15)
+  assigned_date date [not null, default: `CURRENT_DATE`]
+  unassigned_date date
+
+  indexes {
+    (facility_id, staff_id)
+  }
+}
+
+
+//////////////////////////////////////////////////////
+// MAINTENANCE
+//////////////////////////////////////////////////////
+
+Table maintenance_requests {
+  request_id int [pk, increment]
+  facility_id int
+  equipment_id int
+  reported_by int
+  assigned_staff_id int
+  description text [not null]
+  priority varchar(10) [not null, default: 'Normal']
+  status varchar(20) [not null, default: 'Open']
+  reported_at timestamptz [not null, default: `now()`]
+  resolved_at timestamptz
+
+  indexes {
+    status
+  }
+}
+
+Table maintenance_logs {
+  log_id int [pk, increment]
+  request_id int [not null]
+  staff_id int
+  action_taken text [not null]
+  logged_at timestamptz [not null, default: `now()`]
+}
+
+
+//////////////////////////////////////////////////////
+// AUDIT
+//////////////////////////////////////////////////////
+
+Table audit_logs {
+  log_id bigint [pk, increment]
+  table_name varchar(50) [not null]
+  record_id int [not null]
+  action_type varchar(10) [not null]
+  changed_by int
+  old_value jsonb
+  new_value jsonb
+  changed_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (table_name, record_id)
+  }
+}
+
+
+//////////////////////////////////////////////////////
+// RELATIONSHIPS
+//////////////////////////////////////////////////////
+
+// USERS -> ROLES
+Ref: users.role_id > roles.role_id
+
+
+// BUILDINGS -> FACILITIES
+Ref: facilities.building_id > buildings.building_id
+
+// FACILITY TYPES -> FACILITIES
+Ref: facilities.facility_type_id > facility_types.facility_type_id
+
+
+// EQUIPMENT CATEGORIES -> EQUIPMENT
+Ref: equipment.category_id > equipment_categories.category_id
+
+// HOME FACILITY -> EQUIPMENT
+Ref: equipment.home_facility_id > facilities.facility_id
+
+
+// FACILITIES -> RESERVATIONS
+Ref: reservations.facility_id > facilities.facility_id
+
+// REQUESTER -> RESERVATIONS
+Ref: reservations.requested_by > users.user_id
+
+// APPROVER -> RESERVATIONS
+Ref: reservations.approved_by > users.user_id
+
+// STATUS -> RESERVATIONS
+Ref: reservations.status_id > reservation_status.status_id
+
+
+// RESERVATION <-> EQUIPMENT
+Ref: reservation_equipment.reservation_id > reservations.reservation_id
+Ref: reservation_equipment.equipment_id > equipment.equipment_id
+
+
+// EQUIPMENT LOAN -> USER
+Ref: equipment_loans.user_id > users.user_id
+
+// LOAN APPROVER -> USER
+Ref: equipment_loans.approved_by > users.user_id
+
+// LOAN -> LOAN ITEMS
+Ref: loan_items.loan_id > equipment_loans.loan_id
+
+// EQUIPMENT -> LOAN ITEMS
+Ref: loan_items.equipment_id > equipment.equipment_id
+
+
+// FACILITY <-> STAFF
+Ref: facility_staff_assignments.facility_id > facilities.facility_id
+Ref: facility_staff_assignments.staff_id > users.user_id
+
+
+// MAINTENANCE REQUEST -> FACILITY
+Ref: maintenance_requests.facility_id > facilities.facility_id
+
+// MAINTENANCE REQUEST -> EQUIPMENT
+Ref: maintenance_requests.equipment_id > equipment.equipment_id
+
+// MAINTENANCE REQUEST -> REPORTER
+Ref: maintenance_requests.reported_by > users.user_id
+
+// MAINTENANCE REQUEST -> ASSIGNED STAFF
+Ref: maintenance_requests.assigned_staff_id > users.user_id
+
+// MAINTENANCE LOG -> REQUEST
+Ref: maintenance_logs.request_id > maintenance_requests.request_id
+
+// MAINTENANCE LOG -> STAFF
+Ref: maintenance_logs.staff_id > users.user_id
+
+
+// AUDIT -> USER
+Ref: audit_logs.changed_by > users.user_id

@@ -1,0 +1,2 @@
+# Match formatter output on Windows and Linux, including Prisma schema checks.
+* text=auto eol=lf

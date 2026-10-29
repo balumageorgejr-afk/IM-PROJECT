@@ -1,0 +1,249 @@
+// Target: docs/professor-approved-schema.dbml (16 application entities).
+// Prisma names stay camelCase; physical names follow the approved snake_case DBML.
+// Unqualified timestamptz uses PostgreSQL microsecond precision (6).
+// Unspecified FK actions use PostgreSQL NO ACTION rather than implicit Prisma
+// cascades or nullification. These interpretations are for review, not a migration.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Role {
+  roleId   Int    @id @default(autoincrement()) @map("role_id")
+  roleName String @unique @map("role_name") @db.VarChar(50)
+  users    User[]
+
+  @@map("roles")
+}
+
+model FacilityType {
+  facilityTypeId Int        @id @default(autoincrement()) @map("facility_type_id")
+  typeName       String     @unique @map("type_name") @db.VarChar(50)
+  facilities     Facility[]
+
+  @@map("facility_types")
+}
+
+model EquipmentCategory {
+  categoryId   Int         @id @default(autoincrement()) @map("category_id")
+  categoryName String      @unique @map("category_name") @db.VarChar(50)
+  equipment    Equipment[]
+
+  @@map("equipment_categories")
+}
+
+model ReservationStatus {
+  statusId     Int           @id @default(autoincrement()) @map("status_id")
+  statusName   String        @unique @map("status_name") @db.VarChar(30)
+  reservations Reservation[]
+
+  @@map("reservation_status")
+}
+
+model User {
+  userId        Int      @id @default(autoincrement()) @map("user_id")
+  roleId        Int      @map("role_id")
+  fname         String   @db.VarChar(60)
+  lname         String   @db.VarChar(60)
+  email         String   @unique @db.VarChar(150)
+  passwordHash  String   @map("password_hash") @db.VarChar(255)
+  idNumber      String?  @unique @map("id_number") @db.VarChar(30)
+  contactNumber String?  @map("contact_number") @db.VarChar(20)
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  // DBML specifies a default, not automatic updates on every write.
+  updatedAt     DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  role                   Role                      @relation(fields: [roleId], references: [roleId], onDelete: NoAction, onUpdate: NoAction)
+  requestedReservations  Reservation[]             @relation("ReservationRequester")
+  approvedReservations   Reservation[]             @relation("ReservationApprover")
+  equipmentLoansApproved EquipmentLoan[]           @relation("EquipmentLoanApprover")
+  equipmentLoansBorrowed EquipmentLoan[]           @relation("EquipmentBorrower")
+  maintenanceReports     MaintenanceRequest[]      @relation("MaintenanceReporter")
+  maintenanceAssignments MaintenanceRequest[]      @relation("MaintenanceAssignee")
+  maintenanceLogs        MaintenanceLog[]          @relation("MaintenanceLogStaff")
+  facilityAssignments    FacilityStaffAssignment[] @relation("FacilityStaff")
+  auditLogs              AuditLog[]                @relation("AuditChangedBy")
+
+  @@map("users")
+}
+
+model Building {
+  buildingId   Int        @id @default(autoincrement()) @map("building_id")
+  buildingName String     @unique @map("building_name") @db.VarChar(100)
+  floorCount   Int        @map("floor_count") @db.SmallInt
+  locationNote String?    @map("location_note") @db.VarChar(150)
+  facilities   Facility[]
+
+  @@map("buildings")
+}
+
+model Facility {
+  facilityId          Int                       @id @default(autoincrement()) @map("facility_id")
+  buildingId          Int                       @map("building_id")
+  facilityTypeId      Int                       @map("facility_type_id")
+  facilityName        String                    @map("facility_name") @db.VarChar(100)
+  floorNumber         Int                       @map("floor_number") @db.SmallInt
+  capacity            Int
+  status              String                    @default("Available") @db.VarChar(20)
+  createdAt           DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  building            Building                  @relation(fields: [buildingId], references: [buildingId], onDelete: NoAction, onUpdate: NoAction)
+  facilityType        FacilityType              @relation(fields: [facilityTypeId], references: [facilityTypeId], onDelete: NoAction, onUpdate: NoAction)
+  equipment           Equipment[]
+  reservations        Reservation[]
+  maintenanceRequests MaintenanceRequest[]
+  staffAssignments    FacilityStaffAssignment[]
+
+  @@unique([buildingId, facilityName, floorNumber])
+  @@map("facilities")
+}
+
+model Equipment {
+  equipmentId         Int                    @id @default(autoincrement()) @map("equipment_id")
+  categoryId          Int                    @map("category_id")
+  homeFacilityId      Int?                   @map("home_facility_id")
+  equipmentName       String                 @map("equipment_name") @db.VarChar(100)
+  serialNumber        String?                @unique @map("serial_number") @db.VarChar(60)
+  totalQuantity       Int                    @map("total_quantity")
+  availableQuantity   Int                    @map("available_quantity")
+  conditionStatus     String                 @default("Good") @map("condition_status") @db.VarChar(20)
+  createdAt           DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  category            EquipmentCategory      @relation(fields: [categoryId], references: [categoryId], onDelete: NoAction, onUpdate: NoAction)
+  homeFacility        Facility?              @relation(fields: [homeFacilityId], references: [facilityId], onDelete: NoAction, onUpdate: NoAction)
+  reservationItems    ReservationEquipment[]
+  loanItems           LoanItem[]
+  maintenanceRequests MaintenanceRequest[]
+
+  @@map("equipment")
+}
+
+model Reservation {
+  reservationId  Int                    @id @default(autoincrement()) @map("reservation_id")
+  facilityId     Int                    @map("facility_id")
+  requestedBy    Int                    @map("requested_by")
+  approvedBy     Int?                   @map("approved_by")
+  statusId       Int                    @map("status_id")
+  purpose        String                 @db.VarChar(255)
+  startDatetime  DateTime               @map("start_datetime") @db.Timestamptz(6)
+  endDatetime    DateTime               @map("end_datetime") @db.Timestamptz(6)
+  createdAt      DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  facility       Facility               @relation(fields: [facilityId], references: [facilityId], onDelete: NoAction, onUpdate: NoAction)
+  requester      User                   @relation("ReservationRequester", fields: [requestedBy], references: [userId], onDelete: NoAction, onUpdate: NoAction)
+  approver       User?                  @relation("ReservationApprover", fields: [approvedBy], references: [userId], onDelete: NoAction, onUpdate: NoAction)
+  status         ReservationStatus      @relation(fields: [statusId], references: [statusId], onDelete: NoAction, onUpdate: NoAction)
+  equipmentItems ReservationEquipment[]
+
+  @@index([facilityId, startDatetime, endDatetime])
+  @@index([requestedBy])
+  @@map("reservations")
+}
+
+model ReservationEquipment {
+  reservationId     Int         @map("reservation_id")
+  equipmentId       Int         @map("equipment_id")
+  quantityRequested Int         @map("quantity_requested")
+  quantityApproved  Int?        @map("quantity_approved")
+  conditionAtIssue  String?     @map("condition_at_issue") @db.VarChar(20)
+  conditionAtReturn String?     @map("condition_at_return") @db.VarChar(20)
+  reservation       Reservation @relation(fields: [reservationId], references: [reservationId], onDelete: NoAction, onUpdate: NoAction)
+  equipment         Equipment   @relation(fields: [equipmentId], references: [equipmentId], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([reservationId, equipmentId])
+  @@map("reservation_equipment")
+}
+
+model EquipmentLoan {
+  loanId      Int        @id @default(autoincrement()) @map("loan_id")
+  userId      Int        @map("user_id")
+  approvedBy  Int?       @map("approved_by")
+  requestedAt DateTime   @default(now()) @map("requested_at") @db.Timestamptz(6)
+  dueDate     DateTime   @map("due_date") @db.Timestamptz(6)
+  returnDate  DateTime?  @map("return_date") @db.Timestamptz(6)
+  loanStatus  String     @default("Pending") @map("loan_status") @db.VarChar(15)
+  user        User       @relation("EquipmentBorrower", fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
+  approver    User?      @relation("EquipmentLoanApprover", fields: [approvedBy], references: [userId], onDelete: NoAction, onUpdate: NoAction)
+  items       LoanItem[]
+
+  @@map("equipment_loans")
+}
+
+model LoanItem {
+  loanId       Int           @map("loan_id")
+  equipmentId  Int           @map("equipment_id")
+  quantity     Int
+  conditionOut String?       @map("condition_out") @db.VarChar(20)
+  conditionIn  String?       @map("condition_in") @db.VarChar(20)
+  loan         EquipmentLoan @relation(fields: [loanId], references: [loanId], onDelete: NoAction, onUpdate: NoAction)
+  equipment    Equipment     @relation(fields: [equipmentId], references: [equipmentId], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([loanId, equipmentId])
+  @@index([equipmentId])
+  @@map("loan_items")
+}
+
+model FacilityStaffAssignment {
+  assignmentId   Int       @id @default(autoincrement()) @map("assignment_id")
+  facilityId     Int       @map("facility_id")
+  staffId        Int       @map("staff_id")
+  assignedRole   String    @default("Custodian") @map("assigned_role") @db.VarChar(30)
+  shift          String?   @db.VarChar(15)
+  assignedDate   DateTime  @default(dbgenerated("CURRENT_DATE")) @map("assigned_date") @db.Date
+  unassignedDate DateTime? @map("unassigned_date") @db.Date
+  facility       Facility  @relation(fields: [facilityId], references: [facilityId], onDelete: NoAction, onUpdate: NoAction)
+  staff          User      @relation("FacilityStaff", fields: [staffId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([facilityId, staffId])
+  @@map("facility_staff_assignments")
+}
+
+model MaintenanceRequest {
+  requestId       Int              @id @default(autoincrement()) @map("request_id")
+  facilityId      Int?             @map("facility_id")
+  equipmentId     Int?             @map("equipment_id")
+  reportedBy      Int?             @map("reported_by")
+  assignedStaffId Int?             @map("assigned_staff_id")
+  description     String           @db.Text
+  priority        String           @default("Normal") @db.VarChar(10)
+  status          String           @default("Open") @db.VarChar(20)
+  reportedAt      DateTime         @default(now()) @map("reported_at") @db.Timestamptz(6)
+  resolvedAt      DateTime?        @map("resolved_at") @db.Timestamptz(6)
+  facility        Facility?        @relation(fields: [facilityId], references: [facilityId], onDelete: NoAction, onUpdate: NoAction)
+  equipment       Equipment?       @relation(fields: [equipmentId], references: [equipmentId], onDelete: NoAction, onUpdate: NoAction)
+  reporter        User?            @relation("MaintenanceReporter", fields: [reportedBy], references: [userId], onDelete: NoAction, onUpdate: NoAction)
+  assignedStaff   User?            @relation("MaintenanceAssignee", fields: [assignedStaffId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
+  logs            MaintenanceLog[]
+
+  @@index([status])
+  @@map("maintenance_requests")
+}
+
+model MaintenanceLog {
+  logId       Int                @id @default(autoincrement()) @map("log_id")
+  requestId   Int                @map("request_id")
+  staffId     Int?               @map("staff_id")
+  actionTaken String             @map("action_taken") @db.Text
+  loggedAt    DateTime           @default(now()) @map("logged_at") @db.Timestamptz(6)
+  request     MaintenanceRequest @relation(fields: [requestId], references: [requestId], onDelete: NoAction, onUpdate: NoAction)
+  staff       User?              @relation("MaintenanceLogStaff", fields: [staffId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("maintenance_logs")
+}
+
+model AuditLog {
+  logId      BigInt   @id @default(autoincrement()) @map("log_id")
+  tableName  String   @map("table_name") @db.VarChar(50)
+  recordId   Int      @map("record_id")
+  actionType String   @map("action_type") @db.VarChar(10)
+  changedBy  Int?     @map("changed_by")
+  oldValue   Json?    @map("old_value") @db.JsonB
+  newValue   Json?    @map("new_value") @db.JsonB
+  changedAt  DateTime @default(now()) @map("changed_at") @db.Timestamptz(6)
+  user       User?    @relation("AuditChangedBy", fields: [changedBy], references: [userId], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([tableName, recordId])
+  @@map("audit_logs")
+}

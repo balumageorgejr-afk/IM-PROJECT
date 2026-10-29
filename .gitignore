@@ -1,0 +1,18 @@
+node_modules/
+# Keep environment variables out of version control
+.env
+.env.*
+!.env.example
+
+/generated/prisma
+/generated/
+/coverage/
+*.log
+
+# Local scratch request payloads; keep intentional fixtures in tests/fixtures.
+/reservation.json
+/requests/
+/tmp/
+*.request.json
+client/dist/
+client/coverage/

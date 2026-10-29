@@ -1,0 +1,9 @@
+node_modules/
+tmp/
+generated/
+coverage/
+package-lock.json
+prisma/migrations/
+prisma/schema.prisma
+client/dist/
+client/coverage/

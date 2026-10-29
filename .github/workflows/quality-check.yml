@@ -1,0 +1,30 @@
+name: Repository Quality Check
+
+on:
+    push:
+        branches: [main, rebuild/clean-v2]
+    pull_request:
+        branches: [main]
+
+permissions:
+    contents: read
+
+jobs:
+    quality-check:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: npm
+                  cache-dependency-path: |
+                      package-lock.json
+                      client/package-lock.json
+            - name: Install dependencies
+              run: npm ci
+            - name: Install frontend dependencies
+              run: npm --prefix client ci
+            - name: Run database-free quality checks
+              run: npm run quality
