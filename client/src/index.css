@@ -1,0 +1,42 @@
+/* Tailwind CSS v4 — single import replaces @tailwind directives */
+@import "tailwindcss";
+
+/* ─── Custom design tokens ─────────────────────────────────────── */
+@theme {
+    /* Brand colours (from existing styles.css) */
+    --color-brand-900: #0a2420;
+    --color-brand-800: #123d36;
+    --color-brand-700: #1a5c52;
+    --color-brand-600: #217a6e;
+    --color-brand-500: #28998a;
+    --color-brand-400: #4db8a8;
+    --color-brand-300: #80d0c4;
+    --color-brand-200: #b3e4dd;
+    --color-brand-100: #e0f4f2;
+    --color-brand-50:  #f2faf9;
+
+    /* Typography */
+    --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+
+/* ─── Base resets ──────────────────────────────────────────────── */
+@layer base {
+    *, *::before, *::after {
+        box-sizing: border-box;
+    }
+
+    html {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+        @apply bg-white text-gray-900 font-sans;
+        min-height: 100dvh;
+    }
+
+    #root {
+        min-height: 100dvh;
+    }
+}
+
