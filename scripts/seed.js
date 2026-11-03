@@ -1,9 +1,14 @@
+<<<<<<< HEAD
 const dns = require("node:dns");
 if (dns.setDefaultResultOrder) dns.setDefaultResultOrder("ipv4first");
 const { execSync } = require("node:child_process");
 const bcrypt = require("bcryptjs");
 const { getPrisma } = require("../src/db");
 const { deployProcedures } = require("./deploy-procedures");
+=======
+const bcrypt = require("bcryptjs");
+const { getPrisma } = require("../src/db");
+>>>>>>> 29edd86f9b26e1dc8fcae15f75b9dbccb660d204
 
 const roles = [
     "System Administrator",
@@ -35,6 +40,7 @@ const equipmentCategories = [
 
 async function seed() {
     const prisma = getPrisma();
+<<<<<<< HEAD
 
     // 0. Ensure schema tables exist (auto push if not yet created)
     try {
@@ -63,6 +69,8 @@ async function seed() {
         );
     }
 
+=======
+>>>>>>> 29edd86f9b26e1dc8fcae15f75b9dbccb660d204
     console.log("Seeding database lookups...");
 
     // 1. Roles

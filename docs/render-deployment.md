@@ -92,6 +92,7 @@ Under the **Environment Variables** tab for your web service, add:
 
 ## Database Initialization & Seeding
 
+<<<<<<< HEAD
 The application automatically handles database setup on Render. When your web service boots, `npm start` executes `scripts/seed.js` which:
 
 1. Automatically verifies tables exist (and pushes the schema if needed).
@@ -116,10 +117,27 @@ If you ever need to manually verify or re-deploy procedures from the Render **Sh
     npm run db:seed
     ```
 4. Verify database connectivity:
+=======
+After your service and database are up, initialize the database schema and populate lookups/admin account:
+
+### Using the Render Shell
+
+1. In your Web Service dashboard, go to the **Shell** tab.
+2. Push the schema to the database:
+    ```sh
+    npm run prisma:push
+    ```
+3. Seed the initial roles, statuses, facility types, categories, and admin user:
+    ```sh
+    npm run db:seed
+    ```
+4. Verify the connection:
+>>>>>>> 29edd86f9b26e1dc8fcae15f75b9dbccb660d204
     ```sh
     npm run db:check
     ```
 
+<<<<<<< HEAD
 > [!WARNING]
 > These commands do **not** install the reservation workflow. `prisma db push`
 > synchronizes Prisma-managed schema only; it does not execute SQL migrations.
@@ -132,6 +150,8 @@ If you ever need to manually verify or re-deploy procedures from the Render **Sh
 > See [the reservation workflow](./reservation-workflow.md) and
 > [release readiness](./application-release-readiness.md) for the deployment gates.
 
+=======
+>>>>>>> 29edd86f9b26e1dc8fcae15f75b9dbccb660d204
 ---
 
 ## Verifying Deployment
