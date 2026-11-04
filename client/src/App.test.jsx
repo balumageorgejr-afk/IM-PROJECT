@@ -903,3 +903,34 @@ test("representative cancellation preserves actor controls and direct assignment
         fixture.calls.some((call) => call.url.startsWith("/api/assignments")),
     ).toBe(false);
 });
+
+test("session cookies persist session across page reloads and are cleared on logout", async () => {
+    const user = {
+        userId: 101,
+        fname: "Fixture",
+        lname: "User",
+        email: "fixture@example.test",
+        role: { roleId: 3, roleName: roles[2] },
+    };
+    document.cookie = `session_token=synthetic-persisted-token; path=/; max-age=900`;
+    document.cookie = `session_user=${encodeURIComponent(JSON.stringify(user))}; path=/; max-age=900`;
+
+    const fixture = setup(roles[2], 101);
+    expect(screen.getByRole("navigation")).toBeTruthy();
+
+    await waitFor(() => {
+        expect(
+            fixture.calls.some(
+                (call) =>
+                    call.url === "/api/auth/me" &&
+                    call.options.headers.Authorization ===
+                        "Bearer synthetic-persisted-token",
+            ),
+        ).toBe(true);
+    });
+
+    fireEvent.click(screen.getByText("Fixture User"));
+    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    await screen.findByRole("heading", { name: "Welcome back" });
+    expect(document.cookie.includes("session_token")).toBe(false);
+});

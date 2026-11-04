@@ -2,11 +2,7 @@ node_modules/
 # Keep environment variables out of version control
 .env
 .env.*
-<<<<<<< HEAD
-.env.example
-=======
 !.env.example
->>>>>>> 29edd86f9b26e1dc8fcae15f75b9dbccb660d204
 
 /generated/prisma
 /generated/

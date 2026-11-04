@@ -77,7 +77,6 @@ test("structured errors use only known labels and codes", async () => {
         api.request("/reservations", { method: "POST", body: {} }),
     ).rejects.toThrow("Purpose must be at most 255 characters.");
 });
-<<<<<<< HEAD
 test("reservation server errors tell users to check history before retrying", async () => {
     const api = createApi({
         fetchImpl: async () =>
@@ -95,8 +94,6 @@ test("reservation server errors tell users to check history before retrying", as
             "The server couldn't confirm this reservation action. Refresh Reservations and check whether it went through before trying again. Contact your administrator if the error continues.",
     });
 });
-=======
->>>>>>> 29edd86f9b26e1dc8fcae15f75b9dbccb660d204
 test("stale requests cannot return another session data or log out a new session", async () => {
     let resolve;
     const onUnauthorized = vi.fn(),

@@ -5,16 +5,10 @@
     "main": "src/server.js",
     "scripts": {
         "dev": "node --watch src/server.js",
-<<<<<<< HEAD
         "start": "node scripts/seed.js && node src/server.js",
         "build": "npm run prisma:generate && npm --prefix client install && npm --prefix client run build",
         "db:check": "node scripts/db-check.js",
         "db:procedures": "node scripts/deploy-procedures.js",
-=======
-        "start": "node src/server.js",
-        "build": "npm run prisma:generate && npm --prefix client install && npm --prefix client run build",
-        "db:check": "node scripts/db-check.js",
->>>>>>> 29edd86f9b26e1dc8fcae15f75b9dbccb660d204
         "db:seed": "node scripts/seed.js",
         "prisma:deploy": "prisma migrate deploy --config prisma7.config.ts",
         "prisma:push": "prisma db push --config prisma7.config.ts",
@@ -44,11 +38,8 @@
     "dependencies": {
         "@prisma/adapter-pg": "7.10.1",
         "@prisma/client": "7.10.1",
-<<<<<<< HEAD
         "@supabase/ssr": "^0.12.7",
         "@supabase/supabase-js": "^2.118.0",
-=======
->>>>>>> 29edd86f9b26e1dc8fcae15f75b9dbccb660d204
         "bcryptjs": "3.0.3",
         "dotenv": "^18.0.4",
         "express": "^5.2.1",

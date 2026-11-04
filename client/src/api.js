@@ -87,7 +87,6 @@ export function createApi({
                 );
             }
             if (!response.ok || data?.success !== true) {
-<<<<<<< HEAD
                 const reservationWrite =
                     method !== "GET" &&
                     /^\/reservations(?:$|\/\d+\/(?:approve|reject|cancel)$)/.test(
@@ -95,13 +94,6 @@ export function createApi({
                     );
                 const reservationCode =
                     reservationWrite &&
-=======
-                const reservationCode =
-                    method !== "GET" &&
-                    /^\/reservations(?:$|\/\d+\/(?:approve|reject|cancel)$)/.test(
-                        path,
-                    ) &&
->>>>>>> 29edd86f9b26e1dc8fcae15f75b9dbccb660d204
                     response.status === 409 &&
                     [
                         "RESERVATION_SCHEDULE_CONFLICT",
@@ -160,17 +152,11 @@ export function createApi({
                 }
                 throw new ApiError(
                     response.status,
-<<<<<<< HEAD
                     response.status >= 500 && reservationWrite
                         ? "The server couldn't confirm this reservation action. Refresh Reservations and check whether it went through before trying again. Contact your administrator if the error continues."
                         : reservationCode === "RESERVATION_CONFLICT"
                           ? "The transaction conflicted or its outcome needs verification. Refresh and check your request history before resubmitting."
                           : message,
-=======
-                    reservationCode === "RESERVATION_CONFLICT"
-                        ? "The transaction conflicted or its outcome needs verification. Refresh and check your request history before resubmitting."
-                        : message,
->>>>>>> 29edd86f9b26e1dc8fcae15f75b9dbccb660d204
                     method !== "GET" &&
                         (response.status === 409 || response.status >= 500) &&
                         reservationCode !== "RESERVATION_SCHEDULE_CONFLICT",
