@@ -10,6 +10,32 @@ const messages = {
     500: "The service could not confirm this operation. Refresh history before resubmitting.",
     503: "This workflow is not configured yet. Contact your administrator.",
 };
+const safeDomainMessages = new Set([
+    "Floor number must be within the selected building's floor count.",
+    "The referenced building does not exist.",
+    "The referenced facility type does not exist.",
+    "A facility with that name already exists on this floor in the building.",
+    "The referenced building or facility type is no longer available.",
+    "Facility has dependent records and cannot be deleted.",
+    "New equipment stock must start fully available.",
+    "Equipment with that serial number already exists.",
+    "The referenced equipment category does not exist.",
+    "The referenced home facility does not exist.",
+    "The referenced category or home facility is no longer available.",
+    "Equipment has dependent records and cannot be deleted.",
+    "Referenced equipment stock cannot be changed through CRUD.",
+    "Unavailable or inconsistent stock must be reconciled before deletion.",
+    "Available quantity cannot exceed total quantity.",
+    "Total quantity cannot be below unavailable stock.",
+    "Availability changes require an inventory workflow; stock edits must preserve unavailable quantity.",
+    "Floor count cannot be below an existing facility's floor number.",
+    "A building with that name already exists.",
+    "Building has dependent facilities and cannot be deleted.",
+    "Invalid facility input, filter or pagination.",
+    "Invalid equipment input, filter or pagination.",
+    "Invalid building input, filter or pagination.",
+    "Stored inventory requires reconciliation before editing.",
+]);
 export class ApiError extends Error {
     constructor(status, message, requiresRefresh = false, code = null) {
         super(message);
@@ -106,6 +132,12 @@ export function createApi({
                     "The request could not be completed.";
                 if (publicRequest && response.status === 401)
                     message = "Sign-in failed. Check your email and password.";
+                if (
+                    typeof data?.message === "string" &&
+                    safeDomainMessages.has(data.message)
+                ) {
+                    message = data.message;
+                }
                 if (response.status === 400 && Array.isArray(data?.errors)) {
                     const labels = {
                         fname: "First name",

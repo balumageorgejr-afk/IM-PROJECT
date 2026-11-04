@@ -268,8 +268,15 @@ function NamedSelect({
                 <small className="picker-help">
                     {displayValue(selected, "buildingId", catalogs)}
                     {selected.capacity
-                        ? " ? Capacity " + selected.capacity
+                        ? " • Capacity " + selected.capacity
                         : ""}
+                </small>
+            )}
+            {selected && kind === "buildings" && (
+                <small className="picker-help">
+                    {selected.floorCount}{" "}
+                    {selected.floorCount === 1 ? "floor" : "floors"}
+                    {selected.locationNote ? ` • ${selected.locationNote}` : ""}
                 </small>
             )}
             {selected &&
@@ -277,7 +284,7 @@ function NamedSelect({
                 selected.availableQuantity !== undefined && (
                     <small className="picker-help">
                         {selected.availableQuantity} available of{" "}
-                        {selected.totalQuantity} ?{" "}
+                        {selected.totalQuantity} •{" "}
                         {selected.conditionStatus || "Condition unavailable"}
                     </small>
                 )}
@@ -702,12 +709,27 @@ export function Editor({
                                             aria-describedby={
                                                 uid + name + "-help"
                                             }
-                                            onChange={(event) =>
+                                            onChange={(event) => {
+                                                const val = event.target.value;
+                                                const syncAvailable =
+                                                    formKind === "equipment" &&
+                                                    !initial.equipmentId &&
+                                                    name === "totalQuantity" &&
+                                                    (values.availableQuantity ===
+                                                        "" ||
+                                                        values.availableQuantity ===
+                                                            values.totalQuantity);
                                                 setValues({
                                                     ...values,
-                                                    [name]: event.target.value,
-                                                })
-                                            }
+                                                    [name]: val,
+                                                    ...(syncAvailable
+                                                        ? {
+                                                              availableQuantity:
+                                                                  val,
+                                                          }
+                                                        : {}),
+                                                });
+                                            }}
                                             required={
                                                 ![
                                                     "optional",
