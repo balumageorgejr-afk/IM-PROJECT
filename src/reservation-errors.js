@@ -38,7 +38,9 @@ function reservationErrorCode(error) {
         for (const code of [
             error?.code,
             error?.meta?.code,
-            error?.meta?.driverAdapterError?.cause?.originalCode,
+            cause?.originalCode,
+            cause?.code,
+            error?.cause?.code,
         ]) {
             if (typeof code === "string" && Object.hasOwn(sqlCodes, code))
                 return sqlCodes[code];

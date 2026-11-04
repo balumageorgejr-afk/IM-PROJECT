@@ -94,6 +94,7 @@ function list(rows, paging, key) {
 }
 const errors = {
     C4001: [400, "Invalid workflow input."],
+    C4011: [401, "Authentication required."],
     C4031: [403, "Access denied."],
     C4041: [404, "Record not found."],
     C4091: [

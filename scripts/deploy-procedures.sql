@@ -459,12 +459,14 @@ CREATE TRIGGER maintenance_guard BEFORE INSERT OR UPDATE ON public.maintenance_r
 
 -- 13. Maintenance log guard
 CREATE OR REPLACE FUNCTION im101_private.maintenance_log_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $log$
-DECLARE who record;
+DECLARE who record; assigned integer;
 BEGIN
  IF TG_RELID<>'public.maintenance_logs'::regclass OR TG_WHEN<>'BEFORE' OR TG_OP<>'INSERT' THEN RAISE EXCEPTION USING ERRCODE='C4031',MESSAGE='Log operation refused.'; END IF;
  SELECT * INTO who FROM im101_private.core_actor();
- IF who.role_name NOT IN('System Administrator','Facility/Maintenance Staff') OR NEW.staff_id<>who.actor OR char_length(btrim(NEW.action_taken)) NOT BETWEEN 1 AND 4000 OR (NEW.notes IS NOT NULL AND (char_length(NEW.notes)>4000 OR NEW.notes~'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]')) THEN RAISE EXCEPTION USING ERRCODE='C4001',MESSAGE='Invalid maintenance log.'; END IF;
- IF NOT EXISTS(SELECT 1 FROM public.maintenance_requests r WHERE r.request_id=NEW.request_id AND r.status IN('Open','In Progress') AND (who.role_name='System Administrator' OR r.assigned_staff_id=who.actor)) THEN RAISE EXCEPTION USING ERRCODE='C4031',MESSAGE='Access denied.'; END IF;
+ SELECT assigned_staff_id INTO assigned FROM public.maintenance_requests WHERE request_id=NEW.request_id;
+ IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='C4041',MESSAGE='Maintenance request not found.'; END IF;
+ IF who.role_name NOT IN('System Administrator','Facility/Maintenance Staff') OR NEW.staff_id IS DISTINCT FROM who.actor OR char_length(btrim(NEW.action_taken)) NOT BETWEEN 1 AND 4000 THEN RAISE EXCEPTION USING ERRCODE='C4001',MESSAGE='Invalid maintenance log.'; END IF;
+ IF who.role_name<>'System Administrator' AND assigned IS DISTINCT FROM who.actor THEN RAISE EXCEPTION USING ERRCODE='C4031',MESSAGE='Access denied.'; END IF;
  NEW.logged_at:=clock_timestamp();RETURN NEW;
 END $log$;
 
