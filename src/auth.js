@@ -24,6 +24,26 @@ function profile(user) {
     };
 }
 
+function parseCookies(header) {
+    if (typeof header !== "string" || !header) return {};
+    const result = {};
+    for (const item of header.split(";")) {
+        const index = item.indexOf("=");
+        if (index > -1) {
+            const key = item.slice(0, index).trim();
+            const value = item.slice(index + 1).trim();
+            if (key) {
+                try {
+                    result[key] = decodeURIComponent(value);
+                } catch {
+                    result[key] = value;
+                }
+            }
+        }
+    }
+    return result;
+}
+
 function createAuth({ getPrisma, jwtSecret }) {
     if (
         typeof jwtSecret !== "string" ||
@@ -41,11 +61,25 @@ function createAuth({ getPrisma, jwtSecret }) {
             .json({ success: false, message: "Authentication required." });
 
     async function authenticate(req, res, next) {
-        const match = /^Bearer ([^\s]+)$/i.exec(req.get("authorization") || "");
-        if (!match) return unauthorized(res);
+        let token = null;
+        const authHeader = req.get("authorization");
+        if (authHeader) {
+            const match = /^Bearer ([^\s]+)$/i.exec(authHeader);
+            if (!match) return unauthorized(res);
+            token = match[1];
+        } else if (req.headers.cookie) {
+            const cookies = parseCookies(req.headers.cookie);
+            if (
+                typeof cookies.session_token === "string" &&
+                cookies.session_token
+            ) {
+                token = cookies.session_token;
+            }
+        }
+        if (!token) return unauthorized(res);
         let claims;
         try {
-            claims = jwt.verify(match[1], jwtSecret, {
+            claims = jwt.verify(token, jwtSecret, {
                 algorithms: ["HS256"],
                 issuer,
                 audience,
@@ -147,6 +181,18 @@ function createAuth({ getPrisma, jwtSecret }) {
             audience,
             expiresIn: "15m",
         });
+        const isSecure =
+            process.env.NODE_ENV === "production" ||
+            req.secure ||
+            req.headers["x-forwarded-proto"] === "https";
+        const cookieFlags = [
+            `session_token=${encodeURIComponent(token)}`,
+            "Path=/",
+            "Max-Age=900",
+            "SameSite=Lax",
+        ];
+        if (isSecure) cookieFlags.push("Secure");
+        res.setHeader("Set-Cookie", cookieFlags.join("; "));
         res.json({
             success: true,
             token,
@@ -154,6 +200,21 @@ function createAuth({ getPrisma, jwtSecret }) {
             expiresIn: 900,
             user: profile(user),
         });
+    });
+    router.post("/logout", (req, res) => {
+        const isSecure =
+            process.env.NODE_ENV === "production" ||
+            req.secure ||
+            req.headers["x-forwarded-proto"] === "https";
+        const cookieFlags = [
+            "session_token=",
+            "Path=/",
+            "Max-Age=0",
+            "SameSite=Lax",
+        ];
+        if (isSecure) cookieFlags.push("Secure");
+        res.setHeader("Set-Cookie", cookieFlags.join("; "));
+        res.json({ success: true, message: "Signed out successfully." });
     });
     router.get("/me", authenticate, (req, res) =>
         res.json({ success: true, user: req.user }),

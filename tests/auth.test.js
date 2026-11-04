@@ -332,6 +332,45 @@ test("authentication HTTP behavior with database-free fixtures", async (t) => {
     await t.test("health remains available", async () => {
         assert.equal((await request("/api/health")).status, 200);
     });
+    await t.test(
+        "session cookies are set on login, accepted on profile without authorization header, and cleared on logout",
+        async () => {
+            current = { ...fixture };
+            const loginRes = await login();
+            assert.equal(loginRes.status, 200);
+            const setCookie = loginRes.headers.get("set-cookie") || "";
+            assert.match(setCookie, /session_token=/);
+            assert.match(setCookie, /Path=\//);
+            assert.match(setCookie, /SameSite=Lax/);
+
+            // Extract cookie value
+            const tokenMatch = /session_token=([^;]+)/.exec(setCookie);
+            assert.ok(tokenMatch);
+            const cookieHeader = `session_token=${tokenMatch[1]}`;
+
+            // Request /api/auth/me using Cookie header only (no Authorization header)
+            const profileRes = await request("/api/auth/me", {
+                headers: { Cookie: cookieHeader },
+            });
+            assert.equal(profileRes.status, 200);
+            assert.deepEqual(profileRes.body.user, expected);
+
+            // Invalid or missing cookie without Authorization fails
+            const invalidCookie = await request("/api/auth/me", {
+                headers: { Cookie: "session_token=invalid-token" },
+            });
+            assert.equal(invalidCookie.status, 401);
+
+            // Logout clears cookie
+            const logoutRes = await request("/api/auth/logout", {
+                method: "POST",
+            });
+            assert.equal(logoutRes.status, 200);
+            const logoutCookie = logoutRes.headers.get("set-cookie") || "";
+            assert.match(logoutCookie, /session_token=/);
+            assert.match(logoutCookie, /Max-Age=0/);
+        },
+    );
 });
 
 test("missing or weak JWT secrets prevent startup", () => {

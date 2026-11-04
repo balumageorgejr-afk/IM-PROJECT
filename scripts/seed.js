@@ -35,7 +35,6 @@ const equipmentCategories = [
 
 async function seed() {
     const prisma = getPrisma();
-
     // 0. Ensure schema tables exist (auto push if not yet created)
     try {
         await prisma.role.findFirst({ select: { roleId: true } });
@@ -62,7 +61,6 @@ async function seed() {
             procError.message || procError,
         );
     }
-
     console.log("Seeding database lookups...");
 
     // 1. Roles
